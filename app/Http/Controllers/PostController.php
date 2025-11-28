@@ -28,15 +28,24 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
             'message' => 'required|string|max:255',
             'published_at' => 'nullable|date',
         ]);
 
-        auth()->user()->posts()->create($validated);
+        $validated['user_id'] = auth()->id();
 
-        return redirect('/')->with('success', 'Your post has been posted!');
+        // Automatically set title as first 20 chars of message
+        $validated['title'] = substr($validated['message'], 0, 20);
+
+        // Optional slug for route binding
+        $validated['slug'] = \Illuminate\Support\Str::slug($validated['title'] . '-' . \Illuminate\Support\Str::random(6));
+
+        \App\Models\Post::create($validated);
+
+        return redirect()->back()->with('success', 'Your post has been posted!');
     }
+
+
 
     public function show(Post $post)
     {

@@ -30,22 +30,19 @@ class UserController extends Controller
     // Store new user
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'nullable|string|max:50',
+        $validated = $request->validate([
+            'message' => 'required|string|max:255',
+            'published_at' => 'nullable|date',
         ]);
 
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'user',
-        ]);
+        $validated['user_id'] = auth()->id();
+        $validated['slug'] = \Illuminate\Support\Str::slug(substr($validated['message'], 0, 20) . '-' . \Illuminate\Support\Str::random(6));
 
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+        \App\Models\Post::create($validated);
+
+        return redirect()->back()->with('success', 'Your post has been posted!');
     }
+
 
     // Show edit form
     public function edit(User $user)
